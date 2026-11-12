@@ -1,8 +1,10 @@
 ---
 import Layout from '../../layouts/Layout.astro';
 import StatCard from '../../components/StatCard.astro';
-import { getInstallers, type PublicInstaller } from '../../lib/data';
-import { formatDate, plural } from '../../lib/summary';
+import QuoteForm from '../../components/QuoteForm.astro';
+import Faq from '../../components/Faq.astro';
+import { vertical, primarySource, placesUrl, getInstallers, type PublicInstaller } from '../../lib/data';
+import { formatDate, plural, installerFaqs, titleCase } from '../../lib/summary';
 
 export function getStaticPaths() {
   return getInstallers().map((installer) => ({ params: { slug: installer.slug }, props: { installer } }));
@@ -10,16 +12,40 @@ export function getStaticPaths() {
 
 // Only public fields exist on this object; contact details are never available here.
 const { installer: i } = Astro.props as { installer: PublicInstaller };
+const cert = vertical.certification;
 const services = [i.serves_home && 'homes', i.serves_commercial && 'businesses'].filter(Boolean).join(' and ');
 const base = i.base_town ? `${i.base_town.name} (${i.postcode_area})` : `the ${i.postcode_area} postcode area`;
 const summary = [
-  `${i.company_name} is ${i.ozev_approved ? 'an OZEV-approved' : 'an'} EV chargepoint installer based in ${base}${services ? `, installing chargers for ${services}` : ''}.`,
+  `${i.company_name} is ${i.certified ? `an ${cert.approvedAdj} ${vertical.trade}` : vertical.aTrade} based in ${base}${services ? `, installing for ${services}` : ''}.`,
   i.incorporated_on && `It has been registered with Companies House since ${formatDate(i.incorporated_on)}.`,
   i.towns.length > 0 && `We list it in ${plural(i.towns.length, 'town')} within ${i.radius_miles} miles of its base${i.serves_commercial ? ', as it takes on commercial work' : ''}.`,
 ].filter(Boolean).join(' ');
-const quoteUrl =`/quote/?installer=${encodeURIComponent(i.slug)}`;
+const ch = i.sources.find((s) => s.label === 'Date incorporated' || s.label === 'Company number');
+const checks = [
+  {
+    ok: i.certified,
+    title: cert.approved,
+    detail: i.certified ? `On the ${primarySource.sourceName} list` : `Not on the ${primarySource.sourceName} list`,
+    source: `GOV.UK, checked ${formatDate(i.retrieved_at)}`,
+  },
+  {
+    ok: Boolean(i.incorporated_on),
+    title: 'Registered company',
+    detail: i.incorporated_on
+      ? `Incorporated ${formatDate(i.incorporated_on)}${i.company_number ? ` · No. ${i.company_number}` : ''}`
+      : 'No Companies House record matched yet',
+    source: ch ? `Companies House, checked ${formatDate(ch.retrieved_at)}` : null,
+  },
+  {
+    ok: i.serves_commercial,
+    title: 'Commercial work',
+    detail: i.serves_commercial ? 'Installs for businesses as well as homes' : 'Homes only',
+    source: `${cert.name} listing, checked ${formatDate(i.retrieved_at)}`,
+  },
+];
 const crumbs = [
   { name: 'Home', url: '/' },
+  { name: 'Places', url: placesUrl },
   ...(i.county ? [{ name: i.county.name, url: i.county.url }] : []),
   ...(i.base_town ? [{ name: i.base_town.name, url: i.base_town.url }] : []),
   { name: i.company_name },
@@ -27,28 +53,49 @@ const crumbs = [
 ---
 
 <Layout
-  title={`${i.company_name}, EV charger installer${i.base_town ? ` in ${i.base_town.name}` : ''}`}
-  description={`${i.company_name} is an EV charger installer based in ${base}${services ? `, installing for ${services}` : ''}. Request a free quote.`}
+  title={`${i.company_name}: ${cert.name} Status, Years Trading & Areas Covered${i.base_town ? ` (${i.base_town.name})` : ''}`}
+  description={`Check ${i.company_name} before you sign: ${cert.name} status, Companies House record and the towns it covers${i.base_town ? ` around ${i.base_town.name}` : ''}.`}
   breadcrumbs={crumbs}
 >
-  <h1 class="text-3xl font-bold">{i.company_name}</h1>
-  <p class="mt-2 text-slate-600">EV charger installer based in {base}</p>
+  <p class="text-xs font-semibold uppercase tracking-wide text-emerald-800">{vertical.trade}{i.base_town ? ` in ${i.base_town.name}` : ''}</p>
+  <h1 class="mt-1 text-3xl font-bold">{i.company_name}</h1>
+  <p class="mt-3 max-w-2xl">{summary}</p>
 
-  <p class="mt-4 max-w-2xl">{summary}</p>
+  <p class="mt-4 flex flex-wrap gap-2 text-sm">
+    <span class={i.certified ? 'rounded bg-emerald-50 px-2 py-1 text-emerald-800' : 'rounded bg-amber-50 px-2 py-1 text-amber-900'}>{i.certified ? `✓ ${cert.approved}` : `Not ${cert.approved}`}</span>
+    {i.years_trading !== null && <span class="rounded bg-slate-100 px-2 py-1">Trading {plural(i.years_trading, 'year')}</span>}
+    {i.serves_commercial && <span class="rounded bg-slate-100 px-2 py-1">Commercial</span>}
+  </p>
 
-  <dl class="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+  <dl class="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+    <StatCard label={`${cert.name} status`} value={i.certified ? 'Approved' : 'Not listed'} note={`Checked ${formatDate(i.retrieved_at)}`} />
     <StatCard
       label="Years trading"
       value={i.years_trading ?? 'Not known'}
-      note={i.incorporated_on ? `Incorporated ${formatDate(i.incorporated_on)}` : 'No Companies House record matched yet'}
+      note={i.incorporated_on ? `Companies House, since ${formatDate(i.incorporated_on)}` : 'No Companies House record matched yet'}
     />
-    <StatCard label="OZEV status" value={i.ozev_approved ? 'Approved' : 'Not listed'} note={`Checked ${formatDate(i.retrieved_at)}`} />
-    <StatCard label="Residential" value={i.serves_home ? 'Yes' : 'No'} />
-    <StatCard label="Commercial" value={i.serves_commercial ? 'Yes' : 'No'} />
+    <StatCard label="Towns covered" value={i.towns.length} note={`Within ${i.radius_miles} miles of its base`} />
+    <StatCard label="Work" value={i.serves_commercial ? 'Homes and businesses' : 'Homes'} note={`${cert.name} listing`} />
   </dl>
 
-  <a href={quoteUrl} class="mt-8 inline-block rounded bg-emerald-700 px-5 py-3 font-medium text-white hover:bg-emerald-800">Get a quote from {i.company_name}</a>
+  <a href="#quote" class="mt-6 inline-block rounded bg-emerald-700 px-5 py-3 font-medium text-white hover:bg-emerald-800">Get a quote from {i.company_name}</a>
   <p class="mt-2 text-sm text-slate-500">Your enquiry goes through our form. We don't publish installers' contact details.</p>
+
+  <section class="mt-10">
+    <h2 class="text-xl font-semibold">Is {i.company_name} approved and registered?</h2>
+    <ul class="mt-4 divide-y divide-slate-200 rounded border border-slate-200 bg-white">
+      {checks.map((c) => (
+        <li class="flex gap-3 p-4">
+          <span aria-hidden="true" class={c.ok ? 'font-bold text-emerald-700' : 'font-bold text-slate-400'}>{c.ok ? '✓' : '–'}</span>
+          <div>
+            <p class="font-medium">{c.title}</p>
+            <p class="text-sm text-slate-600">{c.detail}</p>
+            {c.source && <p class="mt-1 text-xs text-slate-500">{c.source}</p>}
+          </div>
+        </li>
+      ))}
+    </ul>
+  </section>
 
   {i.towns.length > 0 && (
     <section class="mt-10">
@@ -62,6 +109,22 @@ const crumbs = [
     </section>
   )}
 
+  <QuoteForm
+    installer={{ slug: i.slug, name: i.company_name }}
+    area={i.base_town ? `${i.base_town.name} (${i.postcode_area})` : i.postcode_area}
+    heading={`Get a quote from ${i.company_name}`}
+  />
+
+  <Faq items={installerFaqs(i)} title={`Questions about ${i.company_name}`} />
+
+  <section class="mt-10 rounded border border-slate-200 bg-white p-5">
+    <h2 class="font-semibold">Is this your business?</h2>
+    <p class="mt-1 text-sm text-slate-600">Claim the listing or tell us what's wrong. We check every change against a public source.</p>
+    <p class="mt-3">
+      <a href={`/claim/?installer=${encodeURIComponent(i.slug)}`} class="font-medium text-emerald-800 underline">Claim or correct this listing</a>
+    </p>
+  </section>
+
   <section class="mt-10 border-t border-slate-200 pt-6 text-xs text-slate-500">
     <h2 class="font-semibold text-slate-600">Sources</h2>
     <ul class="mt-2 space-y-1">
@@ -72,8 +135,6 @@ const crumbs = [
       ))}
       {i.company_number && <li>Companies House number: {i.company_number}</li>}
     </ul>
-    <p class="mt-4">
-      <a href={`/claim/?installer=${encodeURIComponent(i.slug)}`} class="font-medium text-emerald-800 underline">Claim or correct this listing</a>
-    </p>
+    <p class="mt-3"><a href="/methodology/" class="underline">How this page is counted</a></p>
   </section>
 </Layout>

@@ -1,11 +1,11 @@
 ---
 import Layout from '../layouts/Layout.astro';
-import { config } from '../lib/data';
+import { config, vertical } from '../lib/data';
 
 const formName = config.claim.formName;
 ---
 
-<Layout title="Claim or correct a listing" description="Run an EV charger installation company listed here? Claim your listing or tell us what needs correcting." noindex>
+<Layout title="Claim or correct a listing" description={`Run ${vertical.aTrade} listed here? Claim your listing or tell us what needs correcting.`} noindex>
   <h1 class="text-3xl font-bold">Claim or correct a listing</h1>
   <p class="mt-2 max-w-2xl text-slate-600">
     If you run the company, or something on a listing is wrong, tell us here. We check every change against a public source before updating the listing.

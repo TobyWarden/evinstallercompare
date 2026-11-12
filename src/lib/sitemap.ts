@@ -1,5 +1,5 @@
 // Builds the XML sitemaps. Only indexable pages go in: noindex towns/counties and the claim form are left out.
-import { config, getDirectory } from './data';
+import { config, getDirectory, placesUrl } from './data';
 
 export interface SitemapEntry {
   path: string;
@@ -21,9 +21,14 @@ export function entries(name: SitemapName): SitemapEntry[] {
       return [
         { path: '/', lastmod: d.lastChecked },
         { path: '/quote/' },
+        { path: '/methodology/' },
+        { path: '/data/', lastmod: d.lastChecked },
+        { path: '/corrections/' },
+        { path: '/how-we-make-money/' },
       ];
     case 'locations':
       return [
+        { path: placesUrl, lastmod: d.lastChecked },
         ...d.counties.filter((c) => c.indexable).map((c) => ({ path: c.url, lastmod: latest(c.installers.map((i) => i.retrieved_at)) })),
         ...d.towns.filter((t) => t.indexable).map((t) => ({ path: t.url, lastmod: latest(t.installers.map((i) => i.retrieved_at)) })),
       ];

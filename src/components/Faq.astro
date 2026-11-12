@@ -1,12 +1,13 @@
 ---
 interface Props {
   items: { q: string; a: string }[];
+  title?: string;
 }
-const { items } = Astro.props;
+const { items, title = 'Frequently asked questions' } = Astro.props;
 ---
 
-<section id="faqs" class="mt-12">
-  <h2 class="text-xl font-semibold">Frequently asked questions</h2>
+<section id="faqs" class="mt-12 scroll-mt-4">
+  <h2 class="text-xl font-semibold">{title}</h2>
   <div class="mt-4 divide-y divide-slate-200 rounded border border-slate-200 bg-white">
     {items.map((f) => (
       <details class="group p-4">

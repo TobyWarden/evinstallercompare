@@ -1,6 +1,6 @@
 ---
 // Compact listing row. Receives only the public installer shape: no contact details exist here.
-import type { PublicInstaller } from '../lib/data';
+import { vertical, type PublicInstaller } from '../lib/data';
 
 interface Props {
   installer: PublicInstaller;
@@ -16,7 +16,7 @@ const where = [i.base_town?.name, i.postcode_area && `${i.postcode_area} area`].
     <p class="mt-1 flex flex-wrap gap-1 text-xs">
       {i.serves_home && <span class="rounded bg-slate-100 px-2 py-0.5">Homes</span>}
       {i.serves_commercial && <span class="rounded bg-slate-100 px-2 py-0.5">Commercial</span>}
-      {i.ozev_approved && <span class="rounded bg-emerald-50 px-2 py-0.5 text-emerald-800">OZEV approved</span>}
+      {i.certified && <span class="rounded bg-emerald-50 px-2 py-0.5 text-emerald-800">{vertical.certification.approved}</span>}
       {i.years_trading !== null && <span class="rounded bg-slate-100 px-2 py-0.5">{i.years_trading} {i.years_trading === 1 ? 'year' : 'years'} trading</span>}
     </p>
   </div>

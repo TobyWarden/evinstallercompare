@@ -1,0 +1,30 @@
+---
+import Layout from '../layouts/Layout.astro';
+import { config } from '../lib/data';
+
+const waitlist = config.quote.mode === 'waitlist';
+---
+
+<Layout title="How we make money" description={`How ${config.site.name} is paid for, and why that doesn't affect which installers we list.`}>
+  <article class="max-w-2xl">
+    <h1 class="text-3xl font-bold">How we make money</h1>
+    {waitlist ? (
+      <p class="mt-3">
+        We plan to charge installers a fee when we introduce them to someone who has asked for a quote. We aren't taking any fees yet: for now we're collecting enquiries and setting up those introductions.
+      </p>
+    ) : (
+      <p class="mt-3">Installers pay us a fee when we introduce them to someone who has asked for a quote.</p>
+    )}
+    <p class="mt-3">Using the site and asking for quotes is free for you.</p>
+
+    <h2 class="mt-8 text-xl font-semibold">What money can't buy</h2>
+    <ul class="mt-2 list-disc space-y-2 pl-5">
+      <li>A place in the directory. We list installers from public records whether they pay us or not.</li>
+      <li>A better position. Rankings can't be bought: the order is set by the rules in our <a href="/methodology/" class="text-emerald-800 underline">methodology</a>.</li>
+      <li>Different facts. Every fact comes from a public source, shown with its date.</li>
+    </ul>
+
+    <h2 class="mt-8 text-xl font-semibold">Your details</h2>
+    <p class="mt-2">We only share your enquiry with installers so they can quote. We never sell your details.</p>
+  </article>
+</Layout>

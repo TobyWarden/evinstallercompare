@@ -1,0 +1,64 @@
+---
+import Layout from '../layouts/Layout.astro';
+import StatCard from '../components/StatCard.astro';
+import { config, primarySource, vertical, getDirectory } from '../lib/data';
+import { formatDate, plural } from '../lib/summary';
+
+const { installers, towns, counties, lastChecked } = getDirectory();
+const latest = (dates: string[]) => dates.filter(Boolean).sort().at(-1) ?? null;
+const withCompany = installers.filter((i) => i.incorporated_on);
+const chDate = latest(installers.flatMap((i) => i.sources.filter((s) => s.label === 'Date incorporated').map((s) => s.retrieved_at)));
+const indexedTowns = towns.filter((t) => t.indexable).length;
+const asOf = lastChecked ? `As of ${formatDate(lastChecked)}` : 'No listings yet';
+
+const sources = [
+  {
+    name: primarySource.sourceName,
+    url: primarySource.sourceUrl,
+    use: `Which installers are ${vertical.certification.approved}, where they are based, and whether they do home or commercial work.`,
+    rows: installers.length,
+    date: lastChecked,
+  },
+  {
+    name: config.companiesHouseMatch.sourceName,
+    url: config.companiesHouseMatch.sourceUrl,
+    use: 'Company names, company numbers and incorporation dates (years trading).',
+    rows: withCompany.length,
+    date: chDate,
+  },
+];
+---
+
+<Layout title="Our data" description={`The public sources behind ${config.site.name}, how many records come from each, and when we last checked them.`}>
+  <h1 class="text-3xl font-bold">Our data</h1>
+  <p class="mt-3 max-w-2xl text-slate-600">
+    Every number on this site is worked out from the records below. Totals here always match the pages they come from. See <a href="/methodology/" class="text-emerald-800 underline">how we list installers</a> for the rules.
+  </p>
+
+  <dl class="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+    <StatCard label="Installers listed" value={installers.length} note={asOf} />
+    <StatCard label="Town pages" value={towns.length} note={`${indexedTowns} with ${config.directory.minInstallersForLocationPage}+ installers`} />
+    <StatCard label="Counties" value={counties.length} note={asOf} />
+    <StatCard label="Matched to Companies House" value={withCompany.length} note={`Of ${plural(installers.length, 'installer')}${chDate ? `, checked ${formatDate(chDate)}` : ''}`} />
+  </dl>
+
+  <section class="mt-10">
+    <h2 class="text-xl font-semibold">Sources</h2>
+    <ul class="mt-4 space-y-4">
+      {sources.map((s) => (
+        <li class="rounded border border-slate-200 bg-white p-4">
+          <a href={s.url} class="font-medium text-emerald-800 underline" rel="noopener">{s.name}</a>
+          <p class="mt-1 text-slate-600">{s.use}</p>
+          <p class="mt-1 text-sm text-slate-500">Used for {plural(s.rows, 'listing')}{s.date ? `, last checked ${formatDate(s.date)}` : ''}.</p>
+        </li>
+      ))}
+    </ul>
+  </section>
+
+  <section class="mt-10 max-w-2xl">
+    <h2 class="text-xl font-semibold">Coming later</h2>
+    <p class="mt-2 text-slate-600">
+      We plan to add MCS certification, TrustMark and other trade scheme badges, and Google ratings (loaded live from Google, not stored by us). Each will show its own source and date on every profile.
+    </p>
+  </section>
+</Layout>

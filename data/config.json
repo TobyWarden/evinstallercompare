@@ -5,6 +5,23 @@
     "locale": "en-GB",
     "tagline": "Compare EV charger installers across the UK, for homes and businesses."
   },
+  "vertical": {
+    "key": "ev-chargers",
+    "locationPath": "ev-charger-installers",
+    "product": "EV charger",
+    "trade": "EV charger installer",
+    "aTrade": "an EV charger installer",
+    "trades": "EV charger installers",
+    "productField": "Car or charger",
+    "certification": {
+      "name": "OZEV",
+      "approved": "OZEV approved",
+      "approvedAdj": "OZEV-approved",
+      "dataColumn": "ozev_approved",
+      "sourceKey": "ozevScrape",
+      "about": "The Office for Zero Emission Vehicles (OZEV) keeps a list of installers approved to fit chargepoints, published on GOV.UK."
+    }
+  },
   "build": {
     "maxPageKb": 300
   },
@@ -21,7 +38,26 @@
     "postcodeSearchMaxMiles": 25
   },
   "quote": {
-    "formName": "quote"
+    "formName": "quote",
+    "mode": "waitlist",
+    "propertyTypes": [
+      {
+        "value": "house",
+        "label": "House"
+      },
+      {
+        "value": "flat",
+        "label": "Flat or apartment"
+      },
+      {
+        "value": "workplace",
+        "label": "Business or workplace"
+      },
+      {
+        "value": "multi-unit",
+        "label": "Car park or apartment block"
+      }
+    ]
   },
   "ozevScrape": {
     "sourceName": "OZEV approved chargepoint installers (GOV.UK)",
@@ -106,5 +142,8 @@
     "fixturesDir": "tests/fixtures",
     "fixtureSourceMarker": "TEST FIXTURE",
     "outDir": "dist-test"
+  },
+  "trust": {
+    "correctionsFile": "corrections.csv"
   }
 }

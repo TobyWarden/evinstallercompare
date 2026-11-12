@@ -1,15 +1,39 @@
 ---
 import Layout from '../layouts/Layout.astro';
-import { config, getDirectory } from '../lib/data';
-import { plural } from '../lib/summary';
+import { config, vertical, primarySource, placesUrl, getDirectory } from '../lib/data';
+import { plural, formatDate, summarise } from '../lib/summary';
 
-const { installers, counties } = getDirectory();
+const { installers, counties, towns, lastChecked } = getDirectory();
+const cert = vertical.certification;
+const s = summarise(installers);
+const waitlist = config.quote.mode === 'waitlist';
+const topCounties = [...counties].sort((a, b) => b.installers.length - a.installers.length).slice(0, config.directory.nearbyTownsCount);
+
+const checks = [
+  { title: cert.approved, text: `Whether the installer is on the ${primarySource.sourceName} list, with the date we checked.` },
+  { title: 'Companies House record', text: 'Company number and how long it has been trading.' },
+  { title: 'Homes or commercial', text: 'Whether it takes on business, workplace and car park installs.' },
+  { title: 'Areas covered', text: 'The towns it works in, worked out from where it is based.' },
+];
+const different = [
+  { title: 'Records, not reviews', text: `Every fact comes from public records: the GOV.UK ${cert.name} list and Companies House. No anonymous star ratings.` },
+  { title: "Rankings can't be bought", text: 'No installer can pay to appear higher, get a badge or be listed. The order comes from the data.' },
+  waitlist
+    ? { title: 'Waitlist, not a handoff', text: "Introductions aren't open yet. The quote form saves your details so we can contact you. It isn't sent to an installer." }
+    : { title: 'One form, not a free-for-all', text: "We pass your enquiry to suitable installers near you, not to everyone who'll pay for it." },
+  { title: 'We show our working', text: 'Every number has its date and source. Our methodology explains how each one is counted.' },
+];
 ---
 
-<Layout>
+<Layout title={`Check ${vertical.aTrade} before you sign`}>
   <section class="rounded border border-slate-200 bg-white p-6 sm:p-10">
-    <h1 class="text-3xl font-bold sm:text-4xl">Find an EV charger installer near you</h1>
-    <p class="mt-3 max-w-2xl text-slate-600">{config.site.tagline}</p>
+    {installers.length > 0 && (
+      <p class="text-xs font-semibold uppercase tracking-wide text-emerald-800">Live across the UK · {plural(installers.length, 'installer')}</p>
+    )}
+    <h1 class="mt-1 text-3xl font-bold sm:text-4xl">Check {vertical.aTrade} before you sign</h1>
+    <p class="mt-3 max-w-2xl text-slate-600">
+      See whether an installer is {cert.approved}, how long it's been trading and which towns it covers, straight from public records. It's free to use, and no installer can pay to rank higher.
+    </p>
 
     <!-- Without JavaScript this goes to the quote form with the postcode filled in. -->
     <form id="postcode-search" action="/quote/" method="get" class="mt-6 flex max-w-lg flex-wrap gap-2">
@@ -20,19 +44,86 @@ const { installers, counties } = getDirectory();
     </form>
     <p id="postcode-message" class="mt-3 hidden text-sm text-slate-600" role="status"></p>
 
-    {installers.length > 0 && (
-      <p class="mt-6 text-sm text-slate-500">{plural(installers.length, 'OZEV-approved installer')} listed across {plural(counties.length, 'county', 'counties')}.</p>
-    )}
+    <ul class="mt-6 space-y-1 text-sm text-slate-500">
+      <li>Built from the GOV.UK {cert.name} list and Companies House{lastChecked && `, checked ${formatDate(lastChecked)}`}</li>
+      <li>Rankings can't be bought</li>
+      {waitlist && <li>The quote form is a waitlist. It isn't sent to an installer</li>}
+    </ul>
   </section>
 
-  {counties.length > 0 && (
+  <section class="mt-10">
+    <h2 class="text-xl font-semibold">Three ways to use {config.site.name}</h2>
+    <div class="mt-4 grid gap-4 sm:grid-cols-3">
+      <a href={placesUrl} class="rounded border border-slate-200 bg-white p-5 hover:border-emerald-700">
+        <p class="font-semibold">Find installers near you</p>
+        <p class="mt-1 text-sm text-slate-600">See who's {cert.approved} in your town, nearest first.</p>
+        <p class="mt-3 text-sm font-medium text-emerald-800">Browse places →</p>
+      </a>
+      <a href="/methodology/" class="rounded border border-slate-200 bg-white p-5 hover:border-emerald-700">
+        <p class="font-semibold">Vet a company before you sign</p>
+        <p class="mt-1 text-sm text-slate-600">{cert.name} status, Companies House record and areas covered on one page.</p>
+        <p class="mt-3 text-sm font-medium text-emerald-800">What we check →</p>
+      </a>
+      <a href="/quote/" class="rounded border border-slate-200 bg-white p-5 hover:border-emerald-700">
+        <p class="font-semibold">Get quotes</p>
+        <p class="mt-1 text-sm text-slate-600">For homes, flats, workplaces, car parks and apartment blocks.</p>
+        <p class="mt-3 text-sm font-medium text-emerald-800">{waitlist ? 'Join the list →' : 'Get quotes →'}</p>
+      </a>
+    </div>
+  </section>
+
+  {installers.length > 0 && (
+    <section class="mt-10">
+      <h2 class="text-xl font-semibold">The directory at a glance</h2>
+      <dl class="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div class="rounded border border-slate-200 bg-white p-4"><dt class="text-sm text-slate-500">{cert.approvedAdj} installers</dt><dd class="mt-1 text-2xl font-semibold">{s.certified}</dd></div>
+        <div class="rounded border border-slate-200 bg-white p-4"><dt class="text-sm text-slate-500">Also do commercial work</dt><dd class="mt-1 text-2xl font-semibold">{s.commercial}</dd></div>
+        <div class="rounded border border-slate-200 bg-white p-4"><dt class="text-sm text-slate-500">Towns with a page</dt><dd class="mt-1 text-2xl font-semibold">{towns.length}</dd></div>
+        <div class="rounded border border-slate-200 bg-white p-4"><dt class="text-sm text-slate-500">Counties</dt><dd class="mt-1 text-2xl font-semibold">{counties.length}</dd></div>
+      </dl>
+      <p class="mt-2 text-xs text-slate-500">{lastChecked && `As of ${formatDate(lastChecked)}. `}<a href="/data/" class="underline">Where this comes from</a></p>
+    </section>
+  )}
+
+  <section class="mt-10">
+    <h2 class="text-xl font-semibold">What we check on every installer</h2>
+    <div class="mt-4 grid gap-4 sm:grid-cols-2">
+      {checks.map((c) => (
+        <div class="rounded border border-slate-200 bg-white p-4">
+          <p class="font-semibold">{c.title}</p>
+          <p class="mt-1 text-sm text-slate-600">{c.text}</p>
+        </div>
+      ))}
+    </div>
+  </section>
+
+  <section class="mt-10">
+    <h2 class="text-xl font-semibold">How {config.site.name} is different</h2>
+    <div class="mt-4 grid gap-4 sm:grid-cols-2">
+      {different.map((c) => (
+        <div class="rounded border border-slate-200 bg-white p-4">
+          <p class="font-semibold">{c.title}</p>
+          <p class="mt-1 text-sm text-slate-600">{c.text}</p>
+        </div>
+      ))}
+    </div>
+    <p class="mt-4 text-sm text-slate-600">
+      {waitlist
+        ? 'How we make money: when introductions open, installers will pay for them. That never affects listings, rankings or what the records say.'
+        : 'How we make money: installers pay for introductions. That never affects listings, rankings or what the records say.'}
+      {' '}<a href="/how-we-make-money/" class="text-emerald-800 underline">More</a>
+    </p>
+  </section>
+
+  {topCounties.length > 0 && (
     <section class="mt-10">
       <h2 class="text-xl font-semibold">Browse by county</h2>
       <ul class="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-        {counties.map((c) => (
-          <li><a href={c.url} class="text-emerald-800 hover:underline">{c.name}</a> <span class="text-sm text-slate-500">({c.installers.length})</span></li>
+        {topCounties.map((c) => (
+          <li><a href={c.url} class="text-emerald-800 hover:underline">{c.name}</a> <span class="text-sm text-slate-500">({plural(c.installers.length, 'installer')})</span></li>
         ))}
       </ul>
+      <p class="mt-3"><a href={placesUrl} class="font-medium text-emerald-800 underline">All {plural(counties.length, 'county', 'counties')} and {plural(towns.length, 'town')}</a></p>
     </section>
   )}
 

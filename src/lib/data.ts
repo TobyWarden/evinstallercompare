@@ -9,6 +9,11 @@ import { parse } from 'csv-parse/sync';
 import configJson from '../../data/config.json';
 
 export const config = configJson;
+/** The trade this build covers (EV chargers now; heat pumps via MCS later). Copy, URLs and the certification column come from here. */
+export const vertical = config.vertical;
+/** The source that lists certified installers for this vertical (e.g. config.ozevScrape). */
+export const primarySource = (config as Record<string, any>)[vertical.certification.sourceKey] as { sourceName: string; sourceUrl: string };
+if (!primarySource?.sourceName) throw new Error(`config.vertical.certification.sourceKey "${vertical.certification.sourceKey}" has no sourceName in config`);
 
 // DATA_DIR points the build at test fixtures (tests/fixtures). It is for `npm run test:build` only:
 // Netlify builds refuse it, and the live data must never contain a fixture row.
@@ -50,7 +55,8 @@ export interface PublicInstaller extends Provenance {
   postcode_area: string;
   serves_home: boolean;
   serves_commercial: boolean;
-  ozev_approved: boolean;
+  /** On the vertical's certification list (config.vertical.certification), e.g. OZEV approved. */
+  certified: boolean;
   incorporated_on: string | null;
   years_trading: number | null;
   /** Listing radius used for this installer (config: commercial installers reach further). */
@@ -87,13 +93,14 @@ export interface Directory {
   counties: County[];
   /** Postcode district (e.g. "TN9") -> town page URL, for the homepage search. */
   postcodeLookup: Record<string, string>;
-  /** Latest OZEV check date across all listings. */
+  /** Latest certification-list check date across all listings. */
   lastChecked: string | null;
 }
 
 // ---------- helpers ----------
-export const countyUrl = (countySlug: string) => `/ev-charger-installers/${countySlug}/`;
-export const townUrl = (countySlug: string, townSlug: string) => `/ev-charger-installers/${countySlug}/${townSlug}/`;
+export const placesUrl = `/${vertical.locationPath}/`;
+export const countyUrl = (countySlug: string) => `${placesUrl}${countySlug}/`;
+export const townUrl = (countySlug: string, townSlug: string) => `${placesUrl}${countySlug}/${townSlug}/`;
 export const installerUrl = (slug: string) => `/installers/${slug}/`;
 /** How far from its base an installer is listed: home-only installers use the smaller radius. */
 export const serviceRadiusMiles = config.directory.serviceRadiusMiles;
@@ -189,7 +196,7 @@ export function getDirectory(): Directory {
     const lat = num(row.latitude);
     const lng = num(row.longitude);
     const sources: FieldSource[] = [
-      { label: 'OZEV listing and services', source: row.source, source_url: row.source_url, retrieved_at: row.retrieved_at },
+      { label: `${vertical.certification.name} listing and services`, source: row.source, source_url: row.source_url, retrieved_at: row.retrieved_at },
     ];
     for (const key of Object.keys(row)) {
       const m = key.match(/^(.+)_source$/);
@@ -206,7 +213,7 @@ export function getDirectory(): Directory {
       postcode_area: (row.postcode_area ?? '').toUpperCase(),
       serves_home: yes(row.serves_home),
       serves_commercial: yes(row.serves_commercial),
-      ozev_approved: yes(row.ozev_approved),
+      certified: yes(row[vertical.certification.dataColumn]),
       incorporated_on: row.incorporated_on || null,
       years_trading: row.incorporated_on ? yearsSince(row.incorporated_on) : null,
       radius_miles: radiusFor(yes(row.serves_commercial)),
@@ -314,4 +321,22 @@ export function getDirectory(): Directory {
 
 export function getInstallers(): PublicInstaller[] {
   return getDirectory().installers;
+}
+
+/** A published change to a listing, shown on /corrections/. */
+export interface Correction extends Provenance {
+  date: string; // YYYY-MM-DD the listing was changed
+  installer_slug: string;
+  what_changed: string;
+}
+
+export function getCorrections(): Correction[] {
+  const file = config.trust.correctionsFile;
+  return readCsv(file)
+    .map((row, i) => {
+      requireProvenance(row, file, i);
+      if (!DATE.test(row.date ?? '') || !row.what_changed) throw new Error(`${file} row ${i + 2}: needs date (YYYY-MM-DD) and what_changed`);
+      return { date: row.date, installer_slug: row.installer_slug ?? '', what_changed: row.what_changed, source: row.source, source_url: row.source_url ?? '', retrieved_at: row.retrieved_at };
+    })
+    .sort((a, b) => b.date.localeCompare(a.date));
 }
