@@ -1,34 +1,11 @@
 ---
 import Layout from '../layouts/Layout.astro';
-import { config } from '../lib/data';
-
-const formName = config.quote.formName;
+import QuoteForm from '../components/QuoteForm.astro';
+import { vertical } from '../lib/data';
 ---
 
-<Layout title="Get quotes" description="Request EV charger installation quotes for your home or business.">
-  <h1 class="text-3xl font-bold">Get EV charger quotes</h1>
-  <p class="mt-2 text-slate-600">Tell us about your installation and we'll pass your enquiry to suitable installers.</p>
-
-  <form name={formName} method="POST" data-netlify="true" netlify-honeypot="bot-field" class="mt-6 grid max-w-lg gap-4">
-    <input type="hidden" name="form-name" value={formName} />
-    <input type="hidden" name="installer" id="installer-field" />
-    <p class="hidden"><label>Leave this empty <input name="bot-field" /></label></p>
-
-    <label class="grid gap-1">Name<input name="name" required class="rounded border border-slate-300 px-3 py-2" /></label>
-    <label class="grid gap-1">Email<input name="email" type="email" required class="rounded border border-slate-300 px-3 py-2" /></label>
-    <label class="grid gap-1">Postcode<input name="postcode" required class="rounded border border-slate-300 px-3 py-2" /></label>
-    <label class="grid gap-1">Property type
-      <select name="property_type" class="rounded border border-slate-300 px-3 py-2">
-        <option value="home">Home</option>
-        <option value="commercial">Commercial site</option>
-      </select>
-    </label>
-    <label class="grid gap-1">Details<textarea name="details" rows="4" class="rounded border border-slate-300 px-3 py-2"></textarea></label>
-    <button type="submit" class="rounded bg-emerald-700 px-4 py-2 font-medium text-white hover:bg-emerald-800">Send enquiry</button>
-  </form>
-
-  <script is:inline>
-    var s = new URLSearchParams(location.search).get('installer');
-    if (s) document.getElementById('installer-field').value = s;
-  </script>
+<Layout title="Get quotes" description={`Request ${vertical.product} installation quotes for your home or business.`}>
+  <h1 class="text-3xl font-bold">Get {vertical.product} quotes</h1>
+  <p class="mt-2 max-w-2xl text-slate-600">For homes, flats, workplaces, car parks and apartment blocks anywhere in the UK.</p>
+  <QuoteForm heading="Tell us about your installation" readQuery />
 </Layout>

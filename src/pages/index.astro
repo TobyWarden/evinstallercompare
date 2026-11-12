@@ -1,39 +1,152 @@
 ---
 import Layout from '../layouts/Layout.astro';
-import { config, getInstallers } from '../lib/data';
+import { config, vertical, primarySource, placesUrl, getDirectory } from '../lib/data';
+import { plural, formatDate, summarise } from '../lib/summary';
 
-const installers = getInstallers();
-const homeCount = installers.filter((i) => i.serves_home).length;
-const commercialCount = installers.filter((i) => i.serves_commercial).length;
+const { installers, counties, towns, lastChecked } = getDirectory();
+const cert = vertical.certification;
+const s = summarise(installers);
+const waitlist = config.quote.mode === 'waitlist';
+const topCounties = [...counties].sort((a, b) => b.installers.length - a.installers.length).slice(0, config.directory.nearbyTownsCount);
+
+const checks = [
+  { title: cert.approved, text: `Whether the installer is on the ${primarySource.sourceName} list, with the date we checked.` },
+  { title: 'Companies House record', text: 'Company number and how long it has been trading.' },
+  { title: 'Homes or commercial', text: 'Whether it takes on business, workplace and car park installs.' },
+  { title: 'Areas covered', text: 'The towns it works in, worked out from where it is based.' },
+];
+const different = [
+  { title: 'Records, not reviews', text: `Every fact comes from public records: the GOV.UK ${cert.name} list and Companies House. No anonymous star ratings.` },
+  { title: "Rankings can't be bought", text: 'No installer can pay to appear higher, get a badge or be listed. The order comes from the data.' },
+  waitlist
+    ? { title: 'Waitlist, not a handoff', text: "Introductions aren't open yet. The quote form saves your details so we can contact you. It isn't sent to an installer." }
+    : { title: 'One form, not a free-for-all', text: "We pass your enquiry to suitable installers near you, not to everyone who'll pay for it." },
+  { title: 'We show our working', text: 'Every number has its date and source. Our methodology explains how each one is counted.' },
+];
 ---
 
-<Layout>
-  <h1 class="text-3xl font-bold">{config.site.name}</h1>
-  <p class="mt-3 max-w-2xl text-slate-600">{config.site.tagline}</p>
+<Layout title={`Check ${vertical.aTrade} before you sign`}>
+  <section class="rounded border border-slate-200 bg-white p-6 sm:p-10">
+    {installers.length > 0 && (
+      <p class="text-xs font-semibold uppercase tracking-wide text-emerald-800">Live across the UK · {plural(installers.length, 'installer')}</p>
+    )}
+    <h1 class="mt-1 text-3xl font-bold sm:text-4xl">Check {vertical.aTrade} before you sign</h1>
+    <p class="mt-3 max-w-2xl text-slate-600">
+      See whether an installer is {cert.approved}, how long it's been trading and which towns it covers, straight from public records. It's free to use, and no installer can pay to rank higher.
+    </p>
 
-  <dl class="mt-8 grid gap-4 sm:grid-cols-3">
-    <div class="rounded border border-slate-200 bg-white p-4">
-      <dt class="text-sm text-slate-500">Installers listed</dt>
-      <dd class="text-2xl font-semibold">{installers.length}</dd>
+    <!-- Without JavaScript this goes to the quote form with the postcode filled in. -->
+    <form id="postcode-search" action="/quote/" method="get" class="mt-6 flex max-w-lg flex-wrap gap-2">
+      <label for="postcode" class="sr-only">Your postcode</label>
+      <input id="postcode" name="postcode" required autocomplete="postal-code" placeholder="Enter your postcode, e.g. SW1A 2AA"
+        class="min-w-0 flex-1 rounded border border-slate-300 px-3 py-2" />
+      <button type="submit" class="rounded bg-emerald-700 px-4 py-2 font-medium text-white hover:bg-emerald-800">Find installers</button>
+    </form>
+    <p id="postcode-message" class="mt-3 hidden text-sm text-slate-600" role="status"></p>
+
+    <ul class="mt-6 space-y-1 text-sm text-slate-500">
+      <li>Built from the GOV.UK {cert.name} list and Companies House{lastChecked && `, checked ${formatDate(lastChecked)}`}</li>
+      <li>Rankings can't be bought</li>
+      {waitlist && <li>The quote form is a waitlist. It isn't sent to an installer</li>}
+    </ul>
+  </section>
+
+  <section class="mt-10">
+    <h2 class="text-xl font-semibold">Three ways to use {config.site.name}</h2>
+    <div class="mt-4 grid gap-4 sm:grid-cols-3">
+      <a href={placesUrl} class="rounded border border-slate-200 bg-white p-5 hover:border-emerald-700">
+        <p class="font-semibold">Find installers near you</p>
+        <p class="mt-1 text-sm text-slate-600">See who's {cert.approved} in your town, nearest first.</p>
+        <p class="mt-3 text-sm font-medium text-emerald-800">Browse places →</p>
+      </a>
+      <a href="/methodology/" class="rounded border border-slate-200 bg-white p-5 hover:border-emerald-700">
+        <p class="font-semibold">Vet a company before you sign</p>
+        <p class="mt-1 text-sm text-slate-600">{cert.name} status, Companies House record and areas covered on one page.</p>
+        <p class="mt-3 text-sm font-medium text-emerald-800">What we check →</p>
+      </a>
+      <a href="/quote/" class="rounded border border-slate-200 bg-white p-5 hover:border-emerald-700">
+        <p class="font-semibold">Get quotes</p>
+        <p class="mt-1 text-sm text-slate-600">For homes, flats, workplaces, car parks and apartment blocks.</p>
+        <p class="mt-3 text-sm font-medium text-emerald-800">{waitlist ? 'Join the list →' : 'Get quotes →'}</p>
+      </a>
     </div>
-    <div class="rounded border border-slate-200 bg-white p-4">
-      <dt class="text-sm text-slate-500">Home installs</dt>
-      <dd class="text-2xl font-semibold">{homeCount}</dd>
-    </div>
-    <div class="rounded border border-slate-200 bg-white p-4">
-      <dt class="text-sm text-slate-500">Commercial installs</dt>
-      <dd class="text-2xl font-semibold">{commercialCount}</dd>
-    </div>
-  </dl>
+  </section>
 
   {installers.length > 0 && (
-    <ul class="mt-8 divide-y divide-slate-200 rounded border border-slate-200 bg-white">
-      {installers.map((i) => (
-        <li class="p-4">
-          <a href={`/installers/${i.slug}/`} class="font-medium text-emerald-800 hover:underline">{i.company_name}</a>
-          <span class="text-slate-500"> · {i.town} ({i.postcode_area})</span>
-        </li>
-      ))}
-    </ul>
+    <section class="mt-10">
+      <h2 class="text-xl font-semibold">The directory at a glance</h2>
+      <dl class="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div class="rounded border border-slate-200 bg-white p-4"><dt class="text-sm text-slate-500">{cert.approvedAdj} installers</dt><dd class="mt-1 text-2xl font-semibold">{s.certified}</dd></div>
+        <div class="rounded border border-slate-200 bg-white p-4"><dt class="text-sm text-slate-500">Also do commercial work</dt><dd class="mt-1 text-2xl font-semibold">{s.commercial}</dd></div>
+        <div class="rounded border border-slate-200 bg-white p-4"><dt class="text-sm text-slate-500">Towns with a page</dt><dd class="mt-1 text-2xl font-semibold">{towns.length}</dd></div>
+        <div class="rounded border border-slate-200 bg-white p-4"><dt class="text-sm text-slate-500">Counties</dt><dd class="mt-1 text-2xl font-semibold">{counties.length}</dd></div>
+      </dl>
+      <p class="mt-2 text-xs text-slate-500">{lastChecked && `As of ${formatDate(lastChecked)}. `}<a href="/data/" class="underline">Where this comes from</a></p>
+    </section>
   )}
+
+  <section class="mt-10">
+    <h2 class="text-xl font-semibold">What we check on every installer</h2>
+    <div class="mt-4 grid gap-4 sm:grid-cols-2">
+      {checks.map((c) => (
+        <div class="rounded border border-slate-200 bg-white p-4">
+          <p class="font-semibold">{c.title}</p>
+          <p class="mt-1 text-sm text-slate-600">{c.text}</p>
+        </div>
+      ))}
+    </div>
+  </section>
+
+  <section class="mt-10">
+    <h2 class="text-xl font-semibold">How {config.site.name} is different</h2>
+    <div class="mt-4 grid gap-4 sm:grid-cols-2">
+      {different.map((c) => (
+        <div class="rounded border border-slate-200 bg-white p-4">
+          <p class="font-semibold">{c.title}</p>
+          <p class="mt-1 text-sm text-slate-600">{c.text}</p>
+        </div>
+      ))}
+    </div>
+    <p class="mt-4 text-sm text-slate-600">
+      {waitlist
+        ? 'How we make money: when introductions open, installers will pay for them. That never affects listings, rankings or what the records say.'
+        : 'How we make money: installers pay for introductions. That never affects listings, rankings or what the records say.'}
+      {' '}<a href="/how-we-make-money/" class="text-emerald-800 underline">More</a>
+    </p>
+  </section>
+
+  {topCounties.length > 0 && (
+    <section class="mt-10">
+      <h2 class="text-xl font-semibold">Browse by county</h2>
+      <ul class="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+        {topCounties.map((c) => (
+          <li><a href={c.url} class="text-emerald-800 hover:underline">{c.name}</a> <span class="text-sm text-slate-500">({plural(c.installers.length, 'installer')})</span></li>
+        ))}
+      </ul>
+      <p class="mt-3"><a href={placesUrl} class="font-medium text-emerald-800 underline">All {plural(counties.length, 'county', 'counties')} and {plural(towns.length, 'town')}</a></p>
+    </section>
+  )}
+
+  <script is:inline>
+    (function () {
+      var form = document.getElementById('postcode-search');
+      var msg = document.getElementById('postcode-message');
+      form.addEventListener('submit', function (e) {
+        var raw = form.postcode.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
+        // Full postcode -> district ("TN91SP" -> "TN9"); a district on its own is used as typed.
+        var district = raw.length > 4 ? raw.slice(0, -3) : raw;
+        if (!/^[A-Z]{1,2}[0-9][A-Z0-9]?$/.test(district)) return; // let the quote form handle it
+        e.preventDefault();
+        fetch('/postcode-lookup.json')
+          .then(function (r) { return r.json(); })
+          .then(function (d) {
+            var i = d.outcodes[district];
+            if (i !== undefined) { location.href = d.towns[i]; return; }
+            msg.innerHTML = 'We don’t have installers listed near ' + district + ' yet. <a class="underline" href="/quote/?postcode=' + encodeURIComponent(raw) + '">Send us an enquiry</a> and we’ll look further afield.';
+            msg.classList.remove('hidden');
+          })
+          .catch(function () { form.submit(); });
+      });
+    })();
+  </script>
 </Layout>

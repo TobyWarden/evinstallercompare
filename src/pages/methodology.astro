@@ -1,0 +1,51 @@
+---
+import Layout from '../layouts/Layout.astro';
+import { config, vertical, primarySource } from '../lib/data';
+import { radiusRule } from '../lib/summary';
+
+const { minInstallersForLocationPage: min, nearbyTownsCount } = config.directory;
+---
+
+<Layout title="How we list installers" description={`How ${config.site.name} decides which ${vertical.trades} to list, where, and in what order.`}>
+  <article class="max-w-2xl">
+    <h1 class="text-3xl font-bold">How we list installers</h1>
+    <p class="mt-3 text-slate-600">
+      {config.site.name} is for checking an installer before you sign. We show public records, not reviews, and every fact on a listing says where it came from and when we checked it.
+    </p>
+
+    <h2 class="mt-8 text-xl font-semibold">Who gets listed</h2>
+    <p class="mt-2">
+      Every installer starts from the government's list of {primarySource.sourceName}. GOV.UK doesn't publish company names, so we only list an installer once we've matched it to a name from a second public source, usually Companies House.
+    </p>
+
+    <h2 class="mt-8 text-xl font-semibold">Which towns an installer appears in</h2>
+    <p class="mt-2">
+      An installer is listed in every town whose centre is {radiusRule} of its base. Its base town is the nearest of those.
+    </p>
+    <p class="mt-2">
+      A town needs at least {min} installers before we let search engines index its page. Towns with fewer still have a page, but it points you to the county page so you can see more options. Each town page also links to its {nearbyTownsCount} nearest neighbours.
+    </p>
+
+    <h2 class="mt-8 text-xl font-semibold">What order they appear in</h2>
+    <p class="mt-2">
+      On town pages, nearest first. On county pages, A to Z. <strong>Rankings can't be bought.</strong> Paying us doesn't change whether an installer is listed, where it appears, or what we say about it. See <a href="/how-we-make-money/" class="text-emerald-800 underline">how we make money</a>.
+    </p>
+
+    <h2 class="mt-8 text-xl font-semibold">What each fact means</h2>
+    <ul class="mt-2 list-disc space-y-2 pl-5">
+      <li><strong>{vertical.certification.approved}:</strong> the installer was on the GOV.UK list on the date shown.</li>
+      <li><strong>Years trading:</strong> whole years since the company was incorporated, from Companies House. Sole traders and partnerships won't have one.</li>
+      <li><strong>Homes / Commercial:</strong> the types of work the installer told {vertical.certification.name} it does.</li>
+    </ul>
+
+    <h2 class="mt-8 text-xl font-semibold">What we don't show</h2>
+    <p class="mt-2">
+      We don't publish installers' phone numbers, email addresses, websites or full addresses. Profiles show the company name, town and postcode area. All enquiries go through our <a href="/quote/" class="text-emerald-800 underline">quote form</a>.
+    </p>
+
+    <h2 class="mt-8 text-xl font-semibold">Getting something fixed</h2>
+    <p class="mt-2">
+      If a listing is wrong, <a href="/claim/" class="text-emerald-800 underline">tell us</a>. We check every change against a public source, and we log what changed on our <a href="/corrections/" class="text-emerald-800 underline">corrections page</a>. The sources behind the whole directory are on our <a href="/data/" class="text-emerald-800 underline">data page</a>.
+    </p>
+  </article>
+</Layout>

@@ -1,0 +1,24 @@
+---
+// Compact listing row. Receives only the public installer shape: no contact details exist here.
+import { vertical, type PublicInstaller } from '../lib/data';
+
+interface Props {
+  installer: PublicInstaller;
+}
+const { installer: i } = Astro.props;
+const where = [i.base_town?.name, i.postcode_area && `${i.postcode_area} area`].filter(Boolean).join(' · ');
+---
+
+<li data-installer={i.slug} class="flex flex-wrap items-center justify-between gap-3 p-4">
+  <div>
+    <a href={i.url} class="font-medium text-emerald-800 hover:underline">{i.company_name}</a>
+    {where && <p class="text-sm text-slate-500">{where}</p>}
+    <p class="mt-1 flex flex-wrap gap-1 text-xs">
+      {i.serves_home && <span class="rounded bg-slate-100 px-2 py-0.5">Homes</span>}
+      {i.serves_commercial && <span class="rounded bg-slate-100 px-2 py-0.5">Commercial</span>}
+      {i.certified && <span class="rounded bg-emerald-50 px-2 py-0.5 text-emerald-800">{vertical.certification.approved}</span>}
+      {i.years_trading !== null && <span class="rounded bg-slate-100 px-2 py-0.5">{i.years_trading} {i.years_trading === 1 ? 'year' : 'years'} trading</span>}
+    </p>
+  </div>
+  <a href={`/quote/?installer=${encodeURIComponent(i.slug)}`} class="rounded border border-emerald-700 px-3 py-1.5 text-sm font-medium text-emerald-800 hover:bg-emerald-50">Get a quote</a>
+</li>

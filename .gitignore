@@ -22,3 +22,7 @@ pnpm-debug.log*
 
 # jetbrains setting folder
 .idea/
+
+# raw scrapes: contain private installer contact details, keep out of git
+data/raw/
+dist-test/

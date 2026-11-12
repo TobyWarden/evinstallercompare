@@ -1,0 +1,71 @@
+---
+// The one quote form. Used inline on town and profile pages and on /quote/, so every copy has the
+// same fields (Netlify Forms registers fields by form name). Pre-filled with the area and, on
+// profiles, the installer. In "waitlist" mode (config.quote.mode) the copy promises a follow-up,
+// not an introduction.
+import { config, vertical } from '../lib/data';
+
+interface Props {
+  /** Shown to the visitor and sent as a hidden field, e.g. "Tonbridge, Kent". */
+  area?: string;
+  installer?: { slug: string; name: string };
+  heading?: string;
+  /** /quote/ reads ?installer= and ?postcode= from the URL; inline forms don't need to. */
+  readQuery?: boolean;
+}
+const { area = '', installer, heading = 'Get a quote', readQuery = false } = Astro.props;
+const { formName, mode, propertyTypes } = config.quote;
+const waitlist = mode === 'waitlist';
+const about = installer ? `${installer.name}${area ? `, ${area}` : ''}` : area;
+const field = 'rounded border border-slate-300 bg-white px-3 py-2';
+---
+
+<section id="quote" class="mt-12 scroll-mt-4 rounded border border-emerald-200 bg-emerald-50/50 p-5">
+  <h2 class="text-xl font-semibold">{heading}</h2>
+  <p class="mt-1 max-w-2xl text-sm text-slate-600">
+    {waitlist
+      ? "We're setting up introductions with installers. Leave your details and we'll get back to you as soon as we can put you in touch."
+      : "Tell us what you need and we'll pass your enquiry to suitable installers."}
+    {' '}We never sell your details, and paying us doesn't change which installers we list or the order they appear.
+  </p>
+
+  <form name={formName} method="POST" action="/quote/thanks/" data-netlify="true" netlify-honeypot="bot-field" class="mt-4 grid max-w-xl gap-4 sm:grid-cols-2">
+    <input type="hidden" name="form-name" value={formName} />
+    <input type="hidden" name="installer" id="installer-field" value={installer?.slug ?? ''} />
+    <input type="hidden" name="area" value={area} />
+    <p class="hidden"><label>Leave this empty <input name="bot-field" /></label></p>
+
+    {about && <p class="rounded bg-white px-3 py-2 text-sm sm:col-span-2">Enquiry about: <strong>{about}</strong></p>}
+    <p id="installer-note" class="hidden rounded bg-white px-3 py-2 text-sm sm:col-span-2"></p>
+
+    <label class="grid gap-1">Postcode<input name="postcode" id="postcode-field" required autocomplete="postal-code" class={field} /></label>
+    <label class="grid gap-1">Property type
+      <select name="property_type" class={field}>
+        {propertyTypes.map((p) => <option value={p.value}>{p.label}</option>)}
+      </select>
+    </label>
+    <label class="grid gap-1">{vertical.productField} <span class="text-sm text-slate-500">(if you know)</span><input name="product" class={field} /></label>
+    <label class="grid gap-1">Email or phone<input name="contact" required autocomplete="email" class={field} /></label>
+    <label class="grid gap-1 sm:col-span-2">Anything else? <span class="text-sm text-slate-500">(optional, e.g. how many you need for a business site)</span><textarea name="details" rows="3" class={field}></textarea></label>
+    <div class="sm:col-span-2">
+      <button type="submit" class="rounded bg-emerald-700 px-5 py-2.5 font-medium text-white hover:bg-emerald-800">{waitlist ? 'Join the list' : 'Send enquiry'}</button>
+    </div>
+  </form>
+
+  {readQuery && (
+    <script is:inline>
+      (function () {
+        var q = new URLSearchParams(location.search);
+        var s = q.get('installer');
+        if (s) {
+          document.getElementById('installer-field').value = s;
+          var n = document.getElementById('installer-note');
+          n.textContent = 'Enquiry about installer: ' + s.replace(/-/g, ' ');
+          n.classList.remove('hidden');
+        }
+        var pc = q.get('postcode');
+        if (pc) document.getElementById('postcode-field').value = pc;
+      })();
+    </script>
+  )}
+</section>
