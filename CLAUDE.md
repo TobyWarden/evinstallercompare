@@ -5,7 +5,8 @@ EV Installer Compare (evinstallercompare.co.uk) is a UK directory of EV charger 
 ## Commands
 
 - `npm run dev` starts the dev server at http://localhost:4321
-- `npm run build` runs `astro build` and then `scripts/check-build.mjs`. The build fails if a page is over budget or leaks private data.
+- `npm run build` runs `astro build` and then `scripts/check-build.mjs`. The build fails if a page is over budget, leaks private data, contains test fixture data, has a broken internal link or anchor, or if the sitemaps/robots.txt are missing, list a noindex page or miss an indexable one.
+- `npm run test:build` builds `tests/fixtures` into `dist-test/` (never `dist/`), runs the same checks and asserts the directory rules (thresholds, radii, noindex, sitemaps). Run it after changing templates or `src/lib/data.ts`.
 - `npm run preview` serves the built `dist/`
 
 ## Non-negotiable rules
@@ -29,7 +30,8 @@ data/
   ons-regions.json   # ONS region code -> name
   installers.csv     # one row per installer (public + private fields + provenance)
 scripts/
-  check-build.mjs    # post-build page-weight + privacy guard
+  check-build.mjs    # post-build guard: page weight, privacy, fixtures, links, sitemaps
+  test-build.mjs     # fixture build into dist-test/ + directory-rule assertions
   scrape-ozev.mjs    # collects OZEV installers from GOV.UK into data/raw/ (gitignored)
   match-companies-house.mjs # suggests Companies House matches for scraped installers
   build-outcodes.mjs # builds data/outcodes.csv from the ONS Postcode Directory
@@ -40,6 +42,7 @@ src/
   components/        # StatCard, InstallerCard, Faq
   pages/             # templates only: index, ev-charger-installers/[county]/(index|[town]), installers/[slug], quote, claim, postcode-lookup.json
   styles/global.css  # Tailwind entry
+tests/fixtures/       # made-up test data (TEST FIXTURE), never built into the live site
 netlify.toml
 ```
 
@@ -52,8 +55,13 @@ netlify.toml
 
 ## Directory rules (computed in `src/lib/data.ts`)
 
-- An installer is listed in every town whose centre is within `directory.serviceRadiusMiles` of its base. Its base town is the nearest of those.
-- A town gets a page if at least one installer is listed there; it is `noindex` and links to its county when it has fewer than `directory.minInstallersForLocationPage`. Counties roll up their towns and use the same threshold.
+- An installer is listed in every town whose centre is within its radius of its base: `directory.serviceRadiusMiles` for homes-only installers, `directory.commercialServiceRadiusMiles` for installers marked `serves_commercial`. Its base town is the nearest of those.
+- A town gets a page if at least one installer is listed there; it is `noindex` (and left out of the sitemaps) and links to its county when it has fewer than `directory.minInstallersForLocationPage`. Counties roll up their towns and use the same threshold.
 - Installers with no `company_name` are skipped: GOV.UK doesn't publish names, so a name needs its own source (`company_name_source`, `company_name_retrieved_at`).
 - `latitude`, `longitude` and `postcode` in `installers.csv` are private, like contact details. They're used only for build-time distance maths.
-- To try the templates with fixture data outside the repo: `DATA_DIR=/path/to/fixtures npm run build` (needs `installers.csv`, `towns.csv`, `outcodes.csv`).
+- Sitemaps: `/sitemap-index.xml` → `sitemap-pages.xml`, `sitemap-locations.xml`, `sitemap-installers.xml` (built in `src/lib/sitemap.ts`); `/robots.txt` points to the index.
+
+## Test fixtures
+
+- Made-up data lives only in `tests/fixtures/`, and every row's source contains `tests.fixtureSourceMarker` ("TEST FIXTURE"). Never copy fixture rows into `/data`.
+- `DATA_DIR` switches the data folder for `npm run test:build` only. The live build refuses it (and `src/lib/data.ts` refuses it on Netlify), throws on any fixture-marked row in `/data`, and `check-build` fails if any fixture name, slug or marker reaches the built site.

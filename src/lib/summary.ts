@@ -1,6 +1,12 @@
 // Stats and FAQ copy for location pages, computed from the installers listed there.
 import type { PublicInstaller } from './data';
-import { config, serviceRadiusMiles } from './data';
+import { config, serviceRadiusMiles, commercialServiceRadiusMiles } from './data';
+
+/** Plain-English listing rule, e.g. "within 10 miles (25 miles for installers who do commercial work)". */
+export const radiusRule =
+  commercialServiceRadiusMiles > serviceRadiusMiles
+    ? `within ${serviceRadiusMiles} miles (${commercialServiceRadiusMiles} miles for installers who do commercial work)`
+    : `within ${serviceRadiusMiles} miles`;
 
 export interface LocationStats {
   total: number;
@@ -25,7 +31,7 @@ export function summarise(installers: PublicInstaller[]): LocationStats {
 export const plural = (n: number, one: string, many = `${one}s`) => `${n} ${n === 1 ? one : many}`;
 
 export function locationFaqs(place: string, s: LocationStats, lastChecked: string | null, scope: 'town' | 'county') {
-  const where = scope === 'town' ? `within ${serviceRadiusMiles} miles of ${place}` : `across ${place}`;
+  const where = scope === 'town' ? `based ${radiusRule} of ${place}` : `across ${place}`;
   return [
     {
       q: `How many EV charger installers are there in ${place}?`,

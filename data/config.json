@@ -13,9 +13,10 @@
     "consentStorageKey": "analytics-consent"
   },
   "directory": {
-    "minInstallersForLocationPage": 3,
+    "minInstallersForLocationPage": 5,
     "installersPerPage": 20,
     "serviceRadiusMiles": 10,
+    "commercialServiceRadiusMiles": 25,
     "nearbyTownsCount": 6,
     "postcodeSearchMaxMiles": 25
   },
@@ -100,5 +101,10 @@
   },
   "claim": {
     "formName": "listing-correction"
+  },
+  "tests": {
+    "fixturesDir": "tests/fixtures",
+    "fixtureSourceMarker": "TEST FIXTURE",
+    "outDir": "dist-test"
   }
 }

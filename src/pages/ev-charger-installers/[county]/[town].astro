@@ -3,8 +3,8 @@ import Layout from '../../../layouts/Layout.astro';
 import StatCard from '../../../components/StatCard.astro';
 import InstallerCard from '../../../components/InstallerCard.astro';
 import Faq from '../../../components/Faq.astro';
-import { config, getDirectory, serviceRadiusMiles, type Town } from '../../../lib/data';
-import { summarise, locationFaqs, plural } from '../../../lib/summary';
+import { config, getDirectory, type Town } from '../../../lib/data';
+import { summarise, locationFaqs, plural, radiusRule } from '../../../lib/summary';
 
 export function getStaticPaths() {
   return getDirectory().towns.map((town) => ({ params: { county: town.county.slug, town: town.slug }, props: { town } }));
@@ -16,7 +16,7 @@ const county = counties.find((c) => c.slug === town.county.slug)!;
 const s = summarise(town.installers);
 const minListings = config.directory.minInstallersForLocationPage;
 const intro = [
-  `We list ${plural(s.total, 'OZEV-approved installer')} within ${serviceRadiusMiles} miles of ${town.name}, ${town.county.name}.`,
+  `We list ${plural(s.total, 'OZEV-approved installer')} near ${town.name}, ${town.county.name}.`,
   s.commercial > 0 && `${s.commercial} of them install chargers for businesses as well as homes.`,
   'Compare them below and request free quotes through one form.',
 ].filter(Boolean).join(' ');
@@ -56,7 +56,7 @@ const intro = [
 
   <section id="installers" class="mt-10 scroll-mt-4">
     <h2 class="text-xl font-semibold">Installers near {town.name}</h2>
-    <p class="mt-1 text-sm text-slate-500">Nearest first. Listed when based within {serviceRadiusMiles} miles of the town centre.</p>
+    <p class="mt-1 text-sm text-slate-500">Nearest first. Listed when based {radiusRule} of the town centre.</p>
     <ul class="mt-4 divide-y divide-slate-200 rounded border border-slate-200 bg-white">
       {town.installers.map((installer) => <InstallerCard installer={installer} />)}
     </ul>

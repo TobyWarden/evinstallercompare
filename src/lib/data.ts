@@ -10,7 +10,13 @@ import configJson from '../../data/config.json';
 
 export const config = configJson;
 
-// DATA_DIR lets the templates be tested against fixture data kept outside the repo.
+// DATA_DIR points the build at test fixtures (tests/fixtures). It is for `npm run test:build` only:
+// Netlify builds refuse it, and the live data must never contain a fixture row.
+const FIXTURE_MARKER = config.tests.fixtureSourceMarker;
+const isTestBuild = Boolean(process.env.DATA_DIR);
+if (isTestBuild && (process.env.NETLIFY === 'true' || process.env.CONTEXT)) {
+  throw new Error('DATA_DIR is set on a Netlify build. Fixture data is for tests only; unset DATA_DIR.');
+}
 const DATA_DIR = path.resolve(process.env.DATA_DIR ?? path.join(process.cwd(), 'data'));
 
 /** Fields that are stored in /data but must NEVER reach a rendered page. */
@@ -47,6 +53,8 @@ export interface PublicInstaller extends Provenance {
   ozev_approved: boolean;
   incorporated_on: string | null;
   years_trading: number | null;
+  /** Listing radius used for this installer (config: commercial installers reach further). */
+  radius_miles: number;
   base_town: PlaceRef | null;
   county: PlaceRef | null;
   towns: PlaceRef[];
@@ -87,12 +95,26 @@ export interface Directory {
 export const countyUrl = (countySlug: string) => `/ev-charger-installers/${countySlug}/`;
 export const townUrl = (countySlug: string, townSlug: string) => `/ev-charger-installers/${countySlug}/${townSlug}/`;
 export const installerUrl = (slug: string) => `/installers/${slug}/`;
+/** How far from its base an installer is listed: home-only installers use the smaller radius. */
 export const serviceRadiusMiles = config.directory.serviceRadiusMiles;
+export const commercialServiceRadiusMiles = config.directory.commercialServiceRadiusMiles;
+if (!(commercialServiceRadiusMiles >= serviceRadiusMiles)) {
+  throw new Error('config.directory.commercialServiceRadiusMiles must be at least serviceRadiusMiles');
+}
+export const radiusFor = (serves_commercial: boolean) => (serves_commercial ? commercialServiceRadiusMiles : serviceRadiusMiles);
 
 function readCsv(file: string): Record<string, string>[] {
   const p = path.join(DATA_DIR, file);
   if (!fs.existsSync(p)) return [];
-  return parse(fs.readFileSync(p, 'utf8'), { columns: true, skip_empty_lines: true, trim: true, bom: true });
+  const rows: Record<string, string>[] = parse(fs.readFileSync(p, 'utf8'), { columns: true, skip_empty_lines: true, trim: true, bom: true });
+  if (!isTestBuild) {
+    rows.forEach((row, i) => {
+      if (Object.values(row).some((v) => v?.includes(FIXTURE_MARKER))) {
+        throw new Error(`${file} row ${i + 2}: contains "${FIXTURE_MARKER}" test data. Fixtures belong in tests/fixtures only.`);
+      }
+    });
+  }
+  return rows;
 }
 
 function requireProvenance(row: Record<string, string>, file: string, i: number) {
@@ -140,7 +162,6 @@ let cache: Directory | undefined;
 
 export function getDirectory(): Directory {
   if (cache) return cache;
-  const radius = config.directory.serviceRadiusMiles;
   const minListings = config.directory.minInstallersForLocationPage;
 
   // Towns (public data: names and centre points).
@@ -188,6 +209,7 @@ export function getDirectory(): Directory {
       ozev_approved: yes(row.ozev_approved),
       incorporated_on: row.incorporated_on || null,
       years_trading: row.incorporated_on ? yearsSince(row.incorporated_on) : null,
+      radius_miles: radiusFor(yes(row.serves_commercial)),
       base_town: null,
       county: null,
       towns: [],
@@ -204,10 +226,12 @@ export function getDirectory(): Directory {
     seenSlug.add(pub.slug);
   }
 
-  // Which installers are listed in which towns: within the service radius of the town centre.
+  // Which installers are listed in which towns: within the installer's radius of the town centre
+  // (home-only and commercial installers use different radii, both from config).
   const townHits = townRows.map(() => [] as { pub: PublicInstaller; d: number }[]);
   for (const ins of internal) {
     if (!Number.isFinite(ins.lat) || !Number.isFinite(ins.lng)) continue;
+    const radius = ins.pub.radius_miles;
     let nearest = -1;
     let nearestD = Infinity;
     townRows.forEach((t, ti) => {

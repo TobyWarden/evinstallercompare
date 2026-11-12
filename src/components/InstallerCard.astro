@@ -9,7 +9,7 @@ const { installer: i } = Astro.props;
 const where = [i.base_town?.name, i.postcode_area && `${i.postcode_area} area`].filter(Boolean).join(' · ');
 ---
 
-<li class="flex flex-wrap items-center justify-between gap-3 p-4">
+<li data-installer={i.slug} class="flex flex-wrap items-center justify-between gap-3 p-4">
   <div>
     <a href={i.url} class="font-medium text-emerald-800 hover:underline">{i.company_name}</a>
     {where && <p class="text-sm text-slate-500">{where}</p>}

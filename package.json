@@ -10,7 +10,8 @@
     "build": "astro build && node scripts/check-build.mjs",
     "preview": "astro preview",
     "astro": "astro",
-    "scrape:ozev": "node scripts/scrape-ozev.mjs"
+    "scrape:ozev": "node scripts/scrape-ozev.mjs",
+    "test:build": "node scripts/test-build.mjs"
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.3.5",

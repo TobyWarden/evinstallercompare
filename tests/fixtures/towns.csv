@@ -1,0 +1,7 @@
+slug,name,county,county_slug,latitude,longitude,source,source_url,retrieved_at
+tonbridge,Tonbridge,Kent,kent,51.195,0.274,TEST FIXTURE (not real data) - towns,,2026-11-12
+tunbridge-wells,Tunbridge Wells,Kent,kent,51.132,0.263,TEST FIXTURE (not real data) - towns,,2026-11-12
+sevenoaks,Sevenoaks,Kent,kent,51.272,0.190,TEST FIXTURE (not real data) - towns,,2026-11-12
+maidstone,Maidstone,Kent,kent,51.272,0.522,TEST FIXTURE (not real data) - towns,,2026-11-12
+ashford,Ashford,Kent,kent,51.146,0.875,TEST FIXTURE (not real data) - towns,,2026-11-12
+crawley,Crawley,West Sussex,west-sussex,51.109,-0.187,TEST FIXTURE (not real data) - towns,,2026-11-12

@@ -1,7 +1,7 @@
 ---
 import Layout from '../../layouts/Layout.astro';
 import StatCard from '../../components/StatCard.astro';
-import { getInstallers, serviceRadiusMiles, type PublicInstaller } from '../../lib/data';
+import { getInstallers, type PublicInstaller } from '../../lib/data';
 import { formatDate, plural } from '../../lib/summary';
 
 export function getStaticPaths() {
@@ -15,7 +15,7 @@ const base = i.base_town ? `${i.base_town.name} (${i.postcode_area})` : `the ${i
 const summary = [
   `${i.company_name} is ${i.ozev_approved ? 'an OZEV-approved' : 'an'} EV chargepoint installer based in ${base}${services ? `, installing chargers for ${services}` : ''}.`,
   i.incorporated_on && `It has been registered with Companies House since ${formatDate(i.incorporated_on)}.`,
-  i.towns.length > 0 && `We list it in ${plural(i.towns.length, 'town')} within ${serviceRadiusMiles} miles of its base.`,
+  i.towns.length > 0 && `We list it in ${plural(i.towns.length, 'town')} within ${i.radius_miles} miles of its base${i.serves_commercial ? ', as it takes on commercial work' : ''}.`,
 ].filter(Boolean).join(' ');
 const quoteUrl =`/quote/?installer=${encodeURIComponent(i.slug)}`;
 const crumbs = [
@@ -53,7 +53,7 @@ const crumbs = [
   {i.towns.length > 0 && (
     <section class="mt-10">
       <h2 class="text-xl font-semibold">Towns covered</h2>
-      <p class="mt-1 text-sm text-slate-500">Towns within {serviceRadiusMiles} miles of {i.company_name}'s base.</p>
+      <p class="mt-1 text-sm text-slate-500">Towns within {i.radius_miles} miles of {i.company_name}'s base.</p>
       <ul class="mt-3 flex flex-wrap gap-2">
         {i.towns.map((t) => (
           <li><a href={t.url} class="inline-block rounded border border-slate-200 bg-white px-3 py-1 text-sm text-emerald-800 hover:bg-emerald-50">{t.name}</a></li>
