@@ -1,0 +1,18 @@
+---
+interface Props {
+  items: { q: string; a: string }[];
+}
+const { items } = Astro.props;
+---
+
+<section id="faqs" class="mt-12">
+  <h2 class="text-xl font-semibold">Frequently asked questions</h2>
+  <div class="mt-4 divide-y divide-slate-200 rounded border border-slate-200 bg-white">
+    {items.map((f) => (
+      <details class="group p-4">
+        <summary class="cursor-pointer font-medium">{f.q}</summary>
+        <p class="mt-2 text-slate-600">{f.a}</p>
+      </details>
+    ))}
+  </div>
+</section>

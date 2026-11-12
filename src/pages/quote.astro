@@ -16,7 +16,7 @@ const formName = config.quote.formName;
 
     <label class="grid gap-1">Name<input name="name" required class="rounded border border-slate-300 px-3 py-2" /></label>
     <label class="grid gap-1">Email<input name="email" type="email" required class="rounded border border-slate-300 px-3 py-2" /></label>
-    <label class="grid gap-1">Postcode<input name="postcode" required class="rounded border border-slate-300 px-3 py-2" /></label>
+    <label class="grid gap-1">Postcode<input name="postcode" id="postcode-field" required class="rounded border border-slate-300 px-3 py-2" /></label>
     <label class="grid gap-1">Property type
       <select name="property_type" class="rounded border border-slate-300 px-3 py-2">
         <option value="home">Home</option>
@@ -28,7 +28,10 @@ const formName = config.quote.formName;
   </form>
 
   <script is:inline>
-    var s = new URLSearchParams(location.search).get('installer');
+    var q = new URLSearchParams(location.search);
+    var s = q.get('installer');
     if (s) document.getElementById('installer-field').value = s;
+    var pc = q.get('postcode');
+    if (pc) document.getElementById('postcode-field').value = pc;
   </script>
 </Layout>

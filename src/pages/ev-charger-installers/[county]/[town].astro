@@ -1,0 +1,86 @@
+---
+import Layout from '../../../layouts/Layout.astro';
+import StatCard from '../../../components/StatCard.astro';
+import InstallerCard from '../../../components/InstallerCard.astro';
+import Faq from '../../../components/Faq.astro';
+import { config, getDirectory, serviceRadiusMiles, type Town } from '../../../lib/data';
+import { summarise, locationFaqs, plural } from '../../../lib/summary';
+
+export function getStaticPaths() {
+  return getDirectory().towns.map((town) => ({ params: { county: town.county.slug, town: town.slug }, props: { town } }));
+}
+
+const { town } = Astro.props as { town: Town };
+const { counties, lastChecked } = getDirectory();
+const county = counties.find((c) => c.slug === town.county.slug)!;
+const s = summarise(town.installers);
+const minListings = config.directory.minInstallersForLocationPage;
+const intro = [
+  `We list ${plural(s.total, 'OZEV-approved installer')} within ${serviceRadiusMiles} miles of ${town.name}, ${town.county.name}.`,
+  s.commercial > 0 && `${s.commercial} of them install chargers for businesses as well as homes.`,
+  'Compare them below and request free quotes through one form.',
+].filter(Boolean).join(' ');
+---
+
+<Layout
+  title={`EV charger installers in ${town.name}`}
+  description={`Compare ${plural(s.total, 'OZEV-approved EV charger installer')} near ${town.name}, ${town.county.name}. Free quotes for homes and businesses.`}
+  noindex={!town.indexable}
+  breadcrumbs={[{ name: 'Home', url: '/' }, { name: town.county.name, url: town.county.url }, { name: town.name }]}
+>
+  <h1 class="text-3xl font-bold">EV charger installers in {town.name}</h1>
+  <p class="mt-3 max-w-2xl text-slate-600">{intro}</p>
+
+  {!town.indexable && (
+    <div class="mt-6 rounded border border-amber-300 bg-amber-50 p-4 text-sm">
+      Only {plural(s.total, 'installer is', 'installers are')} listed near {town.name} so far (we need {minListings} for a full town page).{' '}
+      <a href={town.county.url} class="font-medium text-emerald-800 underline">See all {plural(county.installers.length, 'installer')} in {town.county.name}</a>.
+    </div>
+  )}
+
+  <dl class="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+    <StatCard label="Installers listed" value={s.total} />
+    <StatCard label="Homes and businesses" value={s.commercial} />
+    <StatCard label="Homes only" value={s.homeOnly} />
+    <StatCard
+      label="Typical years trading"
+      value={s.medianYears ?? 'Not known'}
+      note={s.medianYears !== null ? `Median of ${plural(s.withYears, 'registered company', 'registered companies')}` : undefined}
+    />
+  </dl>
+
+  <p class="mt-6 flex flex-wrap gap-3">
+    <a href="#installers" class="font-medium text-emerald-800 underline">See all {plural(s.total, 'installer')}</a>
+    <a href="/quote/" class="rounded bg-emerald-700 px-4 py-2 font-medium text-white hover:bg-emerald-800">Get quotes</a>
+  </p>
+
+  <section id="installers" class="mt-10 scroll-mt-4">
+    <h2 class="text-xl font-semibold">Installers near {town.name}</h2>
+    <p class="mt-1 text-sm text-slate-500">Nearest first. Listed when based within {serviceRadiusMiles} miles of the town centre.</p>
+    <ul class="mt-4 divide-y divide-slate-200 rounded border border-slate-200 bg-white">
+      {town.installers.map((installer) => <InstallerCard installer={installer} />)}
+    </ul>
+  </section>
+
+  <!-- Reserved for a map of installers. Keep it within config.build.maxPageKb when it's added. -->
+  <section id="map" class="mt-12" data-map-slot></section>
+
+  <section class="mt-12 grid gap-8 sm:grid-cols-2">
+    {town.nearby.length > 0 && (
+      <div>
+        <h2 class="text-xl font-semibold">Nearby towns</h2>
+        <ul class="mt-3 space-y-1">
+          {town.nearby.map((n) => (
+            <li><a href={n.url} class="text-emerald-800 hover:underline">{n.name}</a> <span class="text-sm text-slate-500">({plural(n.count, 'installer')})</span></li>
+          ))}
+        </ul>
+      </div>
+    )}
+    <div>
+      <h2 class="text-xl font-semibold">{town.county.name}</h2>
+      <p class="mt-3"><a href={town.county.url} class="text-emerald-800 hover:underline">All {plural(county.installers.length, 'installer')} across {plural(county.towns.length, 'town')} in {town.county.name}</a></p>
+    </div>
+  </section>
+
+  <Faq items={locationFaqs(town.name, s, lastChecked, 'town')} />
+</Layout>

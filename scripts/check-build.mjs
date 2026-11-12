@@ -16,11 +16,19 @@ const walk = (dir) =>
 const files = walk(dist);
 const sizeOf = (f) => fs.statSync(f).size;
 
-// Private values that must never appear in output.
-const rows = parse(fs.readFileSync(path.join(root, 'data/installers.csv'), 'utf8'), { columns: true, skip_empty_lines: true, trim: true, bom: true });
-const secrets = rows.flatMap((r) => [r.phone, r.email, r.website, r.address]).filter((v) => v && v.length > 4);
+// Private values that must never appear in output. DATA_DIR matches src/lib/data.ts (fixture testing).
+const dataDir = path.resolve(process.env.DATA_DIR ?? path.join(root, 'data'));
+const rows = parse(fs.readFileSync(path.join(dataDir, 'installers.csv'), 'utf8'), { columns: true, skip_empty_lines: true, trim: true, bom: true });
+const secrets = rows
+  .flatMap((r) => [r.phone, r.email, r.website, r.address, r.postcode, r.latitude, r.longitude])
+  .filter((v) => v && v.length > 4);
 
 const errors = [];
+// Client-side files (JSON, JS) must not carry private data either.
+for (const f of files.filter((f) => /\.(js|json|txt|xml)$/.test(f))) {
+  const text = fs.readFileSync(f, 'utf8');
+  for (const s of secrets) if (text.includes(s)) errors.push(`${path.relative(dist, f)}: contains private installer data`);
+}
 for (const html of files.filter((f) => f.endsWith('.html'))) {
   const text = fs.readFileSync(html, 'utf8');
   // Page weight = HTML + local CSS/JS/images it references.

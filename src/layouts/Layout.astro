@@ -2,13 +2,22 @@
 import '../styles/global.css';
 import { config } from '../lib/data';
 
+interface Crumb {
+  name: string;
+  url?: string;
+}
 interface Props {
   title?: string;
   description?: string;
+  /** Thin pages (e.g. towns below the listing threshold) are kept out of search results. */
+  noindex?: boolean;
+  breadcrumbs?: Crumb[];
 }
-const { title, description = config.site.tagline } = Astro.props;
+const { title, description = config.site.tagline, noindex = false, breadcrumbs = [] } = Astro.props;
 const fullTitle = title ? `${title} | ${config.site.name}` : config.site.name;
 const canonical = new URL(Astro.url.pathname, config.site.url).href;
+// Google Analytics loads only after the visitor accepts analytics cookies (UK GDPR / PECR).
+const { gaMeasurementId: gaId, consentStorageKey: consentKey } = config.analytics;
 ---
 
 <!doctype html>
@@ -18,6 +27,7 @@ const canonical = new URL(Astro.url.pathname, config.site.url).href;
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="canonical" href={canonical} />
+    {noindex && <meta name="robots" content="noindex, follow" />}
     <title>{fullTitle}</title>
     <meta name="description" content={description} />
   </head>
@@ -29,7 +39,83 @@ const canonical = new URL(Astro.url.pathname, config.site.url).href;
       </nav>
     </header>
     <main class="mx-auto max-w-5xl px-4 py-8">
+      {breadcrumbs.length > 0 && (
+        <nav aria-label="Breadcrumb" class="mb-4 text-sm text-slate-500">
+          <ol class="flex flex-wrap gap-1">
+            {breadcrumbs.map((c, i) => (
+              <li>
+                {i > 0 && <span aria-hidden="true" class="mx-1">›</span>}
+                {c.url ? <a href={c.url} class="hover:underline">{c.name}</a> : <span aria-current="page" class="text-slate-700">{c.name}</span>}
+              </li>
+            ))}
+          </ol>
+        </nav>
+      )}
       <slot />
     </main>
+    <footer class="border-t border-slate-200 bg-white">
+      <div class="mx-auto max-w-5xl px-4 py-6 text-sm text-slate-500">
+        <p>{config.site.name}. Enquiries go through our <a href="/quote/" class="underline">quote form</a>.</p>
+        {gaId && <p class="mt-2"><button type="button" data-consent-open class="underline">Cookie settings</button></p>}
+      </div>
+    </footer>
+    {gaId && (
+      <div id="consent-banner" hidden role="region" aria-label="Cookie consent" class="fixed inset-x-0 bottom-0 z-50 border-t border-slate-200 bg-white p-4 shadow-lg">
+        <div class="mx-auto flex max-w-5xl flex-col gap-3 text-sm sm:flex-row sm:items-center sm:justify-between">
+          <p>We'd like to use Google Analytics cookies to understand how people use this site. They're only set if you accept.</p>
+          <div class="flex shrink-0 gap-2">
+            <button type="button" data-consent="denied" class="rounded border border-slate-300 px-3 py-2 font-medium hover:bg-slate-100">Reject</button>
+            <button type="button" data-consent="granted" class="rounded bg-emerald-700 px-3 py-2 font-medium text-white hover:bg-emerald-800">Accept</button>
+          </div>
+        </div>
+      </div>
+    )}
+    {gaId && (
+      <script is:inline define:vars={{ gaId, consentKey }}>
+        (function () {
+          var banner = document.getElementById('consent-banner');
+          var loaded = false;
+          function get() { try { return localStorage.getItem(consentKey); } catch (e) { return null; } }
+          function set(v) { try { localStorage.setItem(consentKey, v); } catch (e) {} }
+          function load() {
+            if (loaded) return;
+            loaded = true;
+            window.dataLayer = window.dataLayer || [];
+            window.gtag = function () { dataLayer.push(arguments); };
+            gtag('js', new Date());
+            gtag('config', gaId);
+            var s = document.createElement('script');
+            s.async = true;
+            s.src = 'https://www.googletagmanager.com/gtag/js?id=' + gaId;
+            document.head.appendChild(s);
+          }
+          function clearGaCookies() {
+            document.cookie.split(';').forEach(function (c) {
+              var name = c.split('=')[0].trim();
+              if (name === '_ga' || name.indexOf('_ga_') === 0) {
+                var host = location.hostname.replace(/^www\./, '');
+                ['', '; domain=' + host, '; domain=.' + host].forEach(function (d) {
+                  document.cookie = name + '=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/' + d;
+                });
+              }
+            });
+          }
+          var choice = get();
+          if (choice === 'granted') load();
+          else if (choice !== 'denied') banner.hidden = false;
+          banner.addEventListener('click', function (e) {
+            var v = e.target.getAttribute && e.target.getAttribute('data-consent');
+            if (!v) return;
+            set(v);
+            banner.hidden = true;
+            if (v === 'granted') load();
+            else clearGaCookies();
+          });
+          document.querySelectorAll('[data-consent-open]').forEach(function (b) {
+            b.addEventListener('click', function () { banner.hidden = false; });
+          });
+        })();
+      </script>
+    )}
   </body>
 </html>

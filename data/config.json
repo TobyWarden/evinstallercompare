@@ -8,11 +8,97 @@
   "build": {
     "maxPageKb": 300
   },
+  "analytics": {
+    "gaMeasurementId": "G-VJCDVE5YZM",
+    "consentStorageKey": "analytics-consent"
+  },
   "directory": {
     "minInstallersForLocationPage": 3,
-    "installersPerPage": 20
+    "installersPerPage": 20,
+    "serviceRadiusMiles": 10,
+    "nearbyTownsCount": 6,
+    "postcodeSearchMaxMiles": 25
   },
   "quote": {
     "formName": "quote"
+  },
+  "ozevScrape": {
+    "sourceName": "OZEV approved chargepoint installers (GOV.UK)",
+    "sourceUrl": "https://www.gov.uk/electric-vehicle-chargepoint-installers",
+    "userAgent": "Mozilla/5.0 (compatible; installer-data-collector/1.0)",
+    "minDelayMs": 2000,
+    "maxDelayMs": 3000,
+    "coverageMarginKm": 0.05,
+    "maxRetries": 5,
+    "retryBaseDelayMs": 30000,
+    "gridCellDegrees": 0.02
+  },
+  "companiesHouseMatch": {
+    "sourceName": "Companies House Free Company Data Product",
+    "sourceUrl": "https://download.companieshouse.gov.uk/en_output.html",
+    "activeStatusPrefix": "Active",
+    "minDomainPrefixLength": 6,
+    "maxPrefixCandidates": 5,
+    "addressTokenOverlap": 0.5,
+    "scores": {
+      "domainExact": 3,
+      "domainPrefix": 2,
+      "samePostcode": 2,
+      "samePostcodeArea": 1,
+      "addressMatch": 2,
+      "relevantSic": 1
+    },
+    "highConfidenceScore": 5,
+    "mediumConfidenceScore": 3,
+    "relevantSicCodes": [
+      "43210",
+      "43220",
+      "43290",
+      "43999",
+      "33140",
+      "35110",
+      "35120",
+      "35130",
+      "35140",
+      "71129",
+      "27900",
+      "46690"
+    ],
+    "freeEmailDomains": [
+      "gmail.com",
+      "googlemail.com",
+      "hotmail.com",
+      "hotmail.co.uk",
+      "outlook.com",
+      "outlook.co.uk",
+      "live.com",
+      "live.co.uk",
+      "msn.com",
+      "yahoo.com",
+      "yahoo.co.uk",
+      "ymail.com",
+      "icloud.com",
+      "me.com",
+      "mac.com",
+      "aol.com",
+      "aol.co.uk",
+      "btinternet.com",
+      "btopenworld.com",
+      "sky.com",
+      "talktalk.net",
+      "tiscali.co.uk",
+      "virginmedia.com",
+      "ntlworld.com",
+      "blueyonder.co.uk",
+      "mail.com",
+      "protonmail.com",
+      "proton.me",
+      "gmx.com",
+      "gmx.co.uk",
+      "zoho.com"
+    ]
+  },
+  "claim": {
+    "formName": "listing-correction"
   }
 }

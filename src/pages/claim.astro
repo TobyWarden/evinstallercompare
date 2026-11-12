@@ -1,0 +1,50 @@
+---
+import Layout from '../layouts/Layout.astro';
+import { config } from '../lib/data';
+
+const formName = config.claim.formName;
+---
+
+<Layout title="Claim or correct a listing" description="Run an EV charger installation company listed here? Claim your listing or tell us what needs correcting." noindex>
+  <h1 class="text-3xl font-bold">Claim or correct a listing</h1>
+  <p class="mt-2 max-w-2xl text-slate-600">
+    If you run the company, or something on a listing is wrong, tell us here. We check every change against a public source before updating the listing.
+  </p>
+
+  <form name={formName} method="POST" data-netlify="true" netlify-honeypot="bot-field" class="mt-6 grid max-w-lg gap-4">
+    <input type="hidden" name="form-name" value={formName} />
+    <input type="hidden" name="installer" id="installer-field" />
+    <p class="hidden"><label>Leave this empty <input name="bot-field" /></label></p>
+
+    <p id="installer-note" class="hidden rounded bg-slate-100 px-3 py-2 text-sm"></p>
+    <label class="grid gap-1">Your name<input name="name" required class="rounded border border-slate-300 px-3 py-2" /></label>
+    <label class="grid gap-1">Email<input name="email" type="email" required class="rounded border border-slate-300 px-3 py-2" /></label>
+    <label class="grid gap-1">Your connection to the company
+      <select name="relationship" class="rounded border border-slate-300 px-3 py-2">
+        <option value="owner">I own or run it</option>
+        <option value="employee">I work there</option>
+        <option value="customer">I'm a customer</option>
+        <option value="other">Other</option>
+      </select>
+    </label>
+    <label class="grid gap-1">Request
+      <select name="request" class="rounded border border-slate-300 px-3 py-2">
+        <option value="claim">Claim this listing</option>
+        <option value="correct">Correct something</option>
+        <option value="remove">Remove this listing</option>
+      </select>
+    </label>
+    <label class="grid gap-1">What should change?<textarea name="details" rows="5" class="rounded border border-slate-300 px-3 py-2"></textarea></label>
+    <button type="submit" class="rounded bg-emerald-700 px-4 py-2 font-medium text-white hover:bg-emerald-800">Send</button>
+  </form>
+
+  <script is:inline>
+    var s = new URLSearchParams(location.search).get('installer');
+    if (s) {
+      document.getElementById('installer-field').value = s;
+      var n = document.getElementById('installer-note');
+      n.textContent = 'Listing: /installers/' + s + '/';
+      n.classList.remove('hidden');
+    }
+  </script>
+</Layout>
