@@ -1,0 +1,35 @@
+---
+import '../styles/global.css';
+import { config } from '../lib/data';
+
+interface Props {
+  title?: string;
+  description?: string;
+}
+const { title, description = config.site.tagline } = Astro.props;
+const fullTitle = title ? `${title} | ${config.site.name}` : config.site.name;
+const canonical = new URL(Astro.url.pathname, config.site.url).href;
+---
+
+<!doctype html>
+<html lang={config.site.locale}>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="canonical" href={canonical} />
+    <title>{fullTitle}</title>
+    <meta name="description" content={description} />
+  </head>
+  <body class="min-h-screen bg-slate-50 text-slate-900 antialiased">
+    <header class="border-b border-slate-200 bg-white">
+      <nav class="mx-auto flex max-w-5xl items-center justify-between px-4 py-4">
+        <a href="/" class="font-semibold">{config.site.name}</a>
+        <a href="/quote/" class="rounded bg-emerald-700 px-3 py-2 text-sm font-medium text-white hover:bg-emerald-800">Get quotes</a>
+      </nav>
+    </header>
+    <main class="mx-auto max-w-5xl px-4 py-8">
+      <slot />
+    </main>
+  </body>
+</html>

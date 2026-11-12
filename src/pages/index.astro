@@ -1,0 +1,39 @@
+---
+import Layout from '../layouts/Layout.astro';
+import { config, getInstallers } from '../lib/data';
+
+const installers = getInstallers();
+const homeCount = installers.filter((i) => i.serves_home).length;
+const commercialCount = installers.filter((i) => i.serves_commercial).length;
+---
+
+<Layout>
+  <h1 class="text-3xl font-bold">{config.site.name}</h1>
+  <p class="mt-3 max-w-2xl text-slate-600">{config.site.tagline}</p>
+
+  <dl class="mt-8 grid gap-4 sm:grid-cols-3">
+    <div class="rounded border border-slate-200 bg-white p-4">
+      <dt class="text-sm text-slate-500">Installers listed</dt>
+      <dd class="text-2xl font-semibold">{installers.length}</dd>
+    </div>
+    <div class="rounded border border-slate-200 bg-white p-4">
+      <dt class="text-sm text-slate-500">Home installs</dt>
+      <dd class="text-2xl font-semibold">{homeCount}</dd>
+    </div>
+    <div class="rounded border border-slate-200 bg-white p-4">
+      <dt class="text-sm text-slate-500">Commercial installs</dt>
+      <dd class="text-2xl font-semibold">{commercialCount}</dd>
+    </div>
+  </dl>
+
+  {installers.length > 0 && (
+    <ul class="mt-8 divide-y divide-slate-200 rounded border border-slate-200 bg-white">
+      {installers.map((i) => (
+        <li class="p-4">
+          <a href={`/installers/${i.slug}/`} class="font-medium text-emerald-800 hover:underline">{i.company_name}</a>
+          <span class="text-slate-500"> · {i.town} ({i.postcode_area})</span>
+        </li>
+      ))}
+    </ul>
+  )}
+</Layout>

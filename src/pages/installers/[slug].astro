@@ -1,0 +1,31 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import { getInstallers, type PublicInstaller } from '../../lib/data';
+
+export function getStaticPaths() {
+  return getInstallers().map((installer) => ({ params: { slug: installer.slug }, props: { installer } }));
+}
+
+// Only public fields exist on this object; contact details are never available here.
+const { installer } = Astro.props as { installer: PublicInstaller };
+const services = [installer.serves_home && 'Home', installer.serves_commercial && 'Commercial'].filter(Boolean);
+---
+
+<Layout
+  title={`${installer.company_name}, ${installer.town}`}
+  description={`EV charger installer in ${installer.town} (${installer.postcode_area}). Request a quote.`}
+>
+  <h1 class="text-3xl font-bold">{installer.company_name}</h1>
+  <p class="mt-2 text-slate-600">{installer.town} · {installer.postcode_area} postcode area</p>
+  {services.length > 0 && <p class="mt-4">Installs: {services.join(', ')}</p>}
+
+  <a
+    href={`/quote/?installer=${encodeURIComponent(installer.slug)}`}
+    class="mt-6 inline-block rounded bg-emerald-700 px-4 py-2 font-medium text-white hover:bg-emerald-800"
+  >Request a quote</a>
+
+  <p class="mt-10 text-xs text-slate-500">
+    Source: {installer.source_url ? <a href={installer.source_url} class="underline" rel="nofollow noopener">{installer.source}</a> : installer.source},
+    retrieved {installer.retrieved_at}.
+  </p>
+</Layout>
